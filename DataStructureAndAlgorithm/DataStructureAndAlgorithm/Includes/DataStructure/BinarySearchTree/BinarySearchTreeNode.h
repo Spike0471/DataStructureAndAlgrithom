@@ -6,6 +6,7 @@ class BinarySearchTreeNode
 {
 public:
 	ValueType value;
+	std::shared_ptr<BinarySearchTreeNode> parent;
 	std::shared_ptr<BinarySearchTreeNode> left;
 	std::shared_ptr<BinarySearchTreeNode> right;
 public:

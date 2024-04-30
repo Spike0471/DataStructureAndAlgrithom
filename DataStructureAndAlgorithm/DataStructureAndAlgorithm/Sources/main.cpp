@@ -4,10 +4,8 @@
 int main() 
 {
 	BinarySearchTree<int> tree;
+	tree.insertNode(1);
 	tree.insertNode(3);
-	tree.insertNode(2);
-	tree.insertNode(4);
-	auto test = tree.searchNode(3);
-	std::cout << test->value <<std::endl;
+	tree.deleteNode(3);
 	return 0;
 }
