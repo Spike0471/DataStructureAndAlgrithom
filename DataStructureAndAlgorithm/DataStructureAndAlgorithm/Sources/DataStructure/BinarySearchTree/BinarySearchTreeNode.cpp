@@ -1,1 +1,1 @@
-#include "DataStructure/BinarySearchTree/BinarySearchTreeNode.h"
+#include "DataStructure/BinaryTreeNode.h"
