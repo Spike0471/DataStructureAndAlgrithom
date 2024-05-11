@@ -5,24 +5,26 @@
 template<typename ValueType>
 class BinarySearchTree
 {
-private:
-	std::shared_ptr<BinaryTreeNode<ValueType>> rootNodePtr;
-private:
-	std::shared_ptr<BinaryTreeNode<ValueType>> searchNodeInternal(ValueType val, std::shared_ptr<BinaryTreeNode<ValueType>> current);
-	void insertNodeInternal(ValueType val, std::shared_ptr<BinaryTreeNode<ValueType>>& current);
-	void deleteNodeInternal(ValueType val, std::shared_ptr<BinaryTreeNode<ValueType>>& current, std::shared_ptr<BinaryTreeNode<ValueType>>& parent);
-	void traverseInternal(std::shared_ptr<BinaryTreeNode<ValueType>> root);
+protected:
+	BinaryTreeNode<ValueType>* rootNodePtr;
+protected:
+	virtual BinaryTreeNode<ValueType>* searchNodeInternal(ValueType val, BinaryTreeNode<ValueType>* current);
+	virtual void insertNodeInternal(ValueType val, BinaryTreeNode<ValueType>** currentPtr);
+	virtual void deleteNodeInternal(ValueType val, BinaryTreeNode<ValueType>** currentPtr, BinaryTreeNode<ValueType>* parent);
+	virtual void traverseInternal(BinaryTreeNode<ValueType>* root);
 public:
-	std::shared_ptr<BinaryTreeNode<ValueType>> searchNode(ValueType val);
-	void insertNode(ValueType val);
-	void deleteNode(ValueType val);
-	void traverse();
+	BinaryTreeNode<ValueType>* searchNode(ValueType val);
+	virtual void insertNode(ValueType val);
+	virtual void deleteNode(ValueType val);
+	virtual void traverse();
+	BinarySearchTree();
+	virtual ~BinarySearchTree();
 };
 
 template<typename ValueType>
-inline std::shared_ptr<BinaryTreeNode<ValueType>> BinarySearchTree<ValueType>::searchNodeInternal(ValueType val, std::shared_ptr<BinaryTreeNode<ValueType>> current)
+inline BinaryTreeNode<ValueType>* BinarySearchTree<ValueType>::searchNodeInternal(ValueType val, BinaryTreeNode<ValueType>* current)
 {
-	if (current.get() == nullptr)
+	if (current == nullptr)
 	{
 		return current;
 	}
@@ -44,11 +46,12 @@ inline std::shared_ptr<BinaryTreeNode<ValueType>> BinarySearchTree<ValueType>::s
 }
 
 template<typename ValueType>
-inline void BinarySearchTree<ValueType>::insertNodeInternal(ValueType val, std::shared_ptr<BinaryTreeNode<ValueType>>& current)
+inline void BinarySearchTree<ValueType>::insertNodeInternal(ValueType val, BinaryTreeNode<ValueType>** currentPtr)
 {
-	if (current.get() == nullptr)
+	auto current = *currentPtr;
+	if (current == nullptr)
 	{
-		current = std::make_shared<BinaryTreeNode<ValueType>>(val);
+		*currentPtr = new BinaryTreeNode<ValueType>(val);
 		return;
 	}
 
@@ -59,108 +62,116 @@ inline void BinarySearchTree<ValueType>::insertNodeInternal(ValueType val, std::
 
 	if (current->value < val)
 	{
-		return insertNodeInternal(val, current->right);
+		return insertNodeInternal(val, &current->right);
 	}
 
 	if (current->value > val)
 	{
-		return insertNodeInternal(val, current->left);
+		return insertNodeInternal(val, &current->left);
 	}
 }
 
 template<typename ValueType>
-inline void BinarySearchTree<ValueType>::deleteNodeInternal(ValueType val, std::shared_ptr<BinaryTreeNode<ValueType>>& current, std::shared_ptr<BinaryTreeNode<ValueType>>& parent)
+inline void BinarySearchTree<ValueType>::deleteNodeInternal(ValueType val, BinaryTreeNode<ValueType>** currentPtr, BinaryTreeNode<ValueType>* parent)
 {
-	if (current.get() == nullptr)
+	auto current = *currentPtr;
+	if (current == nullptr)
 	{
 		return;
 	}
 
 	if (current->value < val)
 	{
-		if (current->right.get() == nullptr)
+		if (current->right == nullptr)
 		{
 			return;
 		}
-		return deleteNodeInternal(val, current->right, current);
+		return deleteNodeInternal(val, &current->right, current);
 	}
 
 	if (current->value > val)
 	{
-		if (current->left.get() == nullptr)
+		if (current->left == nullptr)
 		{
 			return;
 		}
-		return deleteNodeInternal(val, current->left, current);
+		return deleteNodeInternal(val, &current->left, current);
 	}
 
 	if (current->value == val)
 	{
-		if (current->left.get() == nullptr && current->right.get() == nullptr)
+		if (current->left == nullptr && current->right == nullptr)
 		{
-			current.reset();
+			delete current;
+			*currentPtr = nullptr;
 			return;
 		}
 
-		if (current->left.get() == nullptr)
+		if (current->left == nullptr)
 		{
-			if (parent.get() == nullptr)
+			if (parent == nullptr)
 			{
 				rootNodePtr = current->right;
+				delete current;
 				return;
 			}
 
-			if (parent->right.get() == current.get())
+			if (parent->right == current)
 			{
 				parent->right = current->right;
 			}
 
-			if (parent->left.get() == current.get())
+			if (parent->left == current)
 			{
 				parent->left = current->right;
 			}
+			delete current;
 			return;
 		}
 
-		if (current->right.get() == nullptr)
+		if (current->right == nullptr)
 		{
-			if (parent.get() == nullptr)
+			if (parent == nullptr)
 			{
 				rootNodePtr = current->left;
+				delete current;
 				return;
 			}
 
-			if (parent->right.get() == current.get())
+			if (parent->right == current)
 			{
 				parent->right = current->left;
 			}
 
-			if (parent->left.get() == current.get())
+			if (parent->left == current)
 			{
 				parent->left = current->left;
 			}
+
+			delete current;
 			return;
 		}
 
 		auto tmp = current->left;
-		while (tmp->right.get() != nullptr)
+		while (tmp->right != nullptr)
 		{
 			tmp = tmp->right;
 		}
 
 		tmp->right = current->right;
 
-		if (parent.get() == nullptr)
+		if (parent == nullptr)
 		{
 			rootNodePtr = current->left;
+			delete current;
 			return;
 		}
 
-		if (parent->left.get() == current.get())
+		if (parent->left == current)
 		{
 			parent->left = current->left;
 		}
-		else if (parent->right.get() == current.get())
+		else if (parent->right == current)
 		{
 			parent->right = current->left;
 		}
@@ -168,32 +179,33 @@ inline void BinarySearchTree<ValueType>::deleteNodeInternal(ValueType val, std::
 		{
 			throw std::exception();
 		}
+		delete current;
 		return;
 	}
 }
 
 template<typename ValueType>
-inline void BinarySearchTree<ValueType>::traverseInternal(std::shared_ptr<BinaryTreeNode<ValueType>> root)
+inline void BinarySearchTree<ValueType>::traverseInternal(BinaryTreeNode<ValueType>* root)
 {
-	if (root.get() == nullptr)
+	if (root == nullptr)
 	{
 		return;
 	}
-	if (root->left.get() != nullptr)
+	if (root->left != nullptr)
 	{
 		traverseInternal(root->left);
 	}
 
 	std::cout << root->value << std::endl;
 
-	if (root->right.get() != nullptr)
+	if (root->right != nullptr)
 	{
 		traverseInternal(root->right);
 	}
 }
 
 template<typename ValueType>
-inline std::shared_ptr<BinaryTreeNode<ValueType>> BinarySearchTree<ValueType>::searchNode(ValueType val)
+inline BinaryTreeNode<ValueType>* BinarySearchTree<ValueType>::searchNode(ValueType val)
 {
 	return searchNodeInternal(val, rootNodePtr);
 }
@@ -201,34 +213,31 @@ inline std::shared_ptr<BinaryTreeNode<ValueType>> BinarySearchTree<ValueType>::s
 template<typename ValueType>
 inline void BinarySearchTree<ValueType>::insertNode(ValueType val)
 {
-	if (rootNodePtr.get() == nullptr)
-	{
-		rootNodePtr = std::make_shared<BinaryTreeNode<ValueType>>(val);
-		return;
-	}
-
-	if (rootNodePtr->value < val)
-	{
-		insertNodeInternal(val, rootNodePtr->right);
-		return;
-	}
-
-	if (rootNodePtr->value > val)
-	{
-		insertNodeInternal(val, rootNodePtr->left);
-		return;
-	}
+	insertNodeInternal(val, &rootNodePtr);
 }
 
 template<typename ValueType>
 inline void BinarySearchTree<ValueType>::deleteNode(ValueType val)
 {
-	std::shared_ptr<BinaryTreeNode<ValueType>> parent;
-	deleteNodeInternal(val, rootNodePtr, parent);
+	deleteNodeInternal(val, &rootNodePtr, nullptr);
 }
 
 template<typename ValueType>
 inline void BinarySearchTree<ValueType>::traverse()
 {
 	traverseInternal(rootNodePtr);
+}
+
+template<typename ValueType>
+inline BinarySearchTree<ValueType>::BinarySearchTree() :rootNodePtr(nullptr)
+{
+}
+
+template<typename ValueType>
+inline BinarySearchTree<ValueType>::~BinarySearchTree()
+{
+	if (rootNodePtr != nullptr)
+	{
+		rootNodePtr->deleteTree();
+	}
 }
